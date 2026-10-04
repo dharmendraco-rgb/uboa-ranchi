@@ -4,73 +4,149 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>UBOA Ranchi Portal</title>
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#002b66">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="UBOA Ranchi">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body {
       background: #002b66;
       color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      padding: 24px 16px;
       text-align: center;
-      padding: 20px;
     }
-    .logo-box {
+    .app-card {
+      background: #ffffff;
+      color: #0f172a;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 20px;
+      padding: 26px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .badge {
+      display: inline-block;
+      background: #fee2e2;
+      color: #c8102e;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .emblem {
       width: 72px;
       height: 72px;
-      border-radius: 18px;
-      background: #ffffff;
-      color: #002b66;
+      border-radius: 16px;
+      background: #002b66;
+      color: #ffffff;
       font-size: 26px;
       font-weight: 900;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-      margin-bottom: 18px;
+      margin: 0 auto 14px auto;
+      border: 3px solid #c8102e;
     }
-    h2 { font-size: 19px; font-weight: 800; margin-bottom: 6px; }
-    p { font-size: 13px; opacity: 0.85; margin-bottom: 22px; }
-    .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top-color: #ffffff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    h1 { font-size: 18px; font-weight: 800; color: #002b66; line-height: 1.3; margin-bottom: 4px; }
+    p { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 20px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      margin-bottom: 10px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-install {
+      background: #15803d;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(21,128,61,0.3);
+    }
+    .btn-open {
+      background: #002b66;
+      color: #ffffff;
+    }
+    .help-note {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <div class="logo-box">UB</div>
-  <h2>UBOA Ranchi Guest House</h2>
-  <p>Connecting to Official Portal...</p>
-  <div class="spinner"></div>
+  <div class="app-card">
+    <div class="badge">UBOA Jharkhand Unit</div>
+    <div class="emblem">UB</div>
+    <h1>UBOA Ranchi Guest House</h1>
+    <p>Install the official association portal on your home screen for fast booking, allotment passes, and guidelines.</p>
+
+    <!-- Native Install Trigger Button -->
+    <button type="button" class="btn btn-install" id="btnInstall" onclick="installPwa()" style="display: none;">
+      📲 Install App on Phone
+    </button>
+
+    <!-- Direct Navigation Button -->
+    <a href="https://sites.google.com/view/uboajharkhand/home" class="btn btn-open" id="btnOpenPortal">
+      🌐 Continue to Web Portal →
+    </a>
+
+    <div class="help-note" id="installHelpText">
+      Or tap Chrome menu (⋮) &gt; <b>Add to Home screen</b>
+    </div>
+  </div>
 
   <script>
-    var TARGET_URL = "https://sites.google.com/view/uboajharkhand/home";
+    var deferredPrompt;
+    var btnInstall = document.getElementById('btnInstall');
+    var helpText = document.getElementById('installHelpText');
 
-    // Register service worker so the app is recognized as an installable PWA
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(function(err) {
-        console.log('SW registration note:', err);
+      navigator.serviceWorker.register('sw.js').then(function() {
+        console.log('UBOA Service Worker Active');
       });
     }
 
-    // Redirect to the actual Google Sites home page seamlessly
-    setTimeout(function() {
-      window.location.replace(TARGET_URL);
-    }, 400);
+    // Capture Native Browser Install Prompt
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      btnInstall.style.display = 'block';
+      helpText.innerText = 'Tap the green button above to install directly.';
+    });
+
+    function installPwa() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choice) {
+          if (choice.outcome === 'accepted') {
+            btnInstall.style.display = 'none';
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert("To install:\n1. Tap the three dots (⋮) in the top-right corner of Chrome.\n2. Tap 'Add to Home screen' or 'Install app'.");
+      }
+    }
+
+    window.addEventListener('appinstalled', function() {
+      btnInstall.style.display = 'none';
+      helpText.innerText = '✅ Installed! You can now launch UBOA Ranchi from your home screen.';
+    });
   </script>
 </body>
 </html>
